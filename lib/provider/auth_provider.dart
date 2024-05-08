@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:koyambedu/Utils/Utils.dart';
@@ -7,8 +8,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 class AuthProvider extends ChangeNotifier{
   bool _isSignedIn = false ;
   bool get isSignedIn => _isSignedIn;
+    bool _isLoading  = false ;
+  bool get isLoading => _isLoading;
+  String? _uid;
+   String get uid => _uid!;
 
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+  final FirebaseFirestore _firebaseFirestore = FirebaseFirestore.instance;
 
   AuthProvider(){
     checkSign();
@@ -43,6 +49,48 @@ void signInWithPhone(BuildContext context, String phoneNumber)async{
   }
 }
 
+
+//verify otp
+
+void verifyOtp({
+  required BuildContext context,
+  required String verificationId,
+  required String userOtp,
+  required Function onSuccess,
+
+}) async{
+  _isLoading = true;
+  notifyListeners();
+  try{
+    PhoneAuthCredential creds = PhoneAuthProvider.credential(
+      verificationId: verificationId,
+     smsCode: userOtp,
+     );
+     User user = (await _firebaseAuth.signInWithCredential(creds)).user!;
+     if (user != null){
+      //hold my brain logic
+      _uid = user.uid;
+
+      onSuccess();
+     }
+
+  }on FirebaseAuthException catch(e){
+    showSnackBar(context, e.message.toString());
+  }
+}
+
+//DAtabase operation
+
+Future<bool> checkExisitingUser() async {
+  DocumentSnapshot snapshot  = await _firebaseFirestore.collection("user").doc(_uid).get();
+  if (snapshot.exists){
+    print ("user exist");
+    return true;
+  }else{
+    print("new user");
+    return false;
+  }
+}
 }
 
 

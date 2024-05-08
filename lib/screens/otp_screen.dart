@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:koyambedu/Utils/Utils.dart';
+import 'package:koyambedu/provider/auth_provider.dart';
+import 'package:koyambedu/screens/user_info.dart';
 import 'package:koyambedu/widgets/custom_button.dart';
 import 'package:pinput/pinput.dart';
+import 'package:provider/provider.dart';
 
 class OtpScreen extends StatefulWidget {
 
@@ -17,8 +21,12 @@ class _OtpScreenState extends State<OtpScreen> {
   String? otpCode;
   @override
   Widget build(BuildContext context) {
+    final isLoading = Provider.of<AuthProvider>(context , listen: true).isLoading;
     return Scaffold(
-      body: SafeArea(child: Center(
+      body: SafeArea(
+        child: isLoading == true ? const Center(
+          child:CircularProgressIndicator(color: Colors.purple,)) 
+        :Center(
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 25, horizontal: 35),
           child: Column(
@@ -57,7 +65,7 @@ class _OtpScreenState extends State<OtpScreen> {
                     fontWeight: FontWeight.w600
                   )
                 ),
-                onSubmitted: (value){
+                onCompleted: (value){
                   setState(() {
                     otpCode = value;
                   });
@@ -68,7 +76,14 @@ class _OtpScreenState extends State<OtpScreen> {
                 width: MediaQuery.of(context).size.width,
                 height: 50,
                 child: CustomButton(text: "Verify",
-                 onPressed: (){}
+                 onPressed: (){
+                  if (otpCode !=null){
+                    verifyOtp(context,otpCode!);
+
+                  }else{
+                    showSnackBar(context, "Enter 6-digit code");
+                  }
+                 }
                  ),
 
               ),
@@ -96,7 +111,32 @@ class _OtpScreenState extends State<OtpScreen> {
             ),
             );
   }
+  
+//verify OTP
+
+void verifyOtp(BuildContext context, String userOtp){
+  final ap = Provider.of<AuthProvider>(context, listen: false);
+  ap.verifyOtp(context: context
+  , verificationId: widget.verificationId
+  , userOtp: userOtp,
+   onSuccess: (){
+    // checking user exist
+    ap.checkExisitingUser().then((value) async{
+      if( value == true){
+        //again brain logic
+
+      }else{
+        //new user(brain logic)
+        Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context)=> const  UserInformationScreen()), (route) => false);
+      }
+
+    });
+   }
+   );
+
+}
 }
 
-//verify OTP
+ 
+
 
