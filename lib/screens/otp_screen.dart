@@ -1,142 +1,83 @@
+
+
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:koyambedu/Utils/Utils.dart';
-import 'package:koyambedu/provider/auth_provider.dart';
-import 'package:koyambedu/screens/user_info.dart';
-import 'package:koyambedu/widgets/custom_button.dart';
-import 'package:pinput/pinput.dart';
-import 'package:provider/provider.dart';
+import 'package:koyambedu/components/round_button.dart';
+import 'package:koyambedu/components/utils.dart';
+import 'package:koyambedu/pages/home.dart';
 
-class OtpScreen extends StatefulWidget {
+class OtpSCreen extends StatefulWidget {
 
-  final String verificationId;
-  const OtpScreen({super.key,
-  required this.verificationId
+final String verificationId ;
+
+   OtpSCreen({super.key,
+  required this.verificationId,
   });
 
   @override
-  State<OtpScreen> createState() => _OtpScreenState();
+  State<OtpSCreen> createState() => _OtpSCreenState();
 }
 
-class _OtpScreenState extends State<OtpScreen> {
-  String? otpCode;
+class _OtpSCreenState extends State<OtpSCreen> {
+bool loading = false;
+final auth =FirebaseAuth.instance;
+final verifyCodeController = TextEditingController();
+
   @override
   Widget build(BuildContext context) {
-    final isLoading = Provider.of<AuthProvider>(context , listen: true).isLoading;
     return Scaffold(
-      body: SafeArea(
-        child: isLoading == true ? const Center(
-          child:CircularProgressIndicator(color: Colors.purple,)) 
-        :Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 25, horizontal: 35),
+      appBar: AppBar(),
+       body: SafeArea(
+        child: Center(
           child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Align(
-               alignment: Alignment.topLeft,
-               child: GestureDetector(
-                onTap: () => Navigator.of(context).pop(),
-                child: const Icon(Icons.arrow_back),
-               ),
-              ),
-             const  Icon(Icons.image_search,
-              size: 200,
-              ),
-              const SizedBox(height: 10,),
-              const Text("Verification",
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-              ),
-              const Text("Enter the OTP sended",
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 20,),
-              Pinput(
-                length: 6,
-                showCursor: true,
-                defaultPinTheme: PinTheme(
-                  width: 60,
-                  height: 60,
-                  
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.purple)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: TextFormField(
+                  controller: verifyCodeController,
+                  decoration: const InputDecoration(
+                    hintText: "Enter the 6 digit"
                   ),
-                  textStyle: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600
-                  )
+                  keyboardType: TextInputType.number,
                 ),
-                onCompleted: (value){
-                  setState(() {
-                    otpCode = value;
-                  });
-                },
               ),
-              const SizedBox(height: 25,),
-              SizedBox(
-                width: MediaQuery.of(context).size.width,
-                height: 50,
-                child: CustomButton(text: "Verify",
-                 onPressed: (){
-                  if (otpCode !=null){
-                    verifyOtp(context,otpCode!);
+              const  SizedBox(height: 40,),
+              RoundButton(title: "verify",loading: loading,
+              
+              
+              
+               onTap:()async{
 
-                  }else{
-                    showSnackBar(context, "Enter 6-digit code");
-                  }
-                 }
-                 ),
+                setState(() {
+                  loading = true;
+                });
 
-              ),
+                final credential = PhoneAuthProvider.credential (
+                  verificationId: widget.verificationId,
+                   smsCode: verifyCodeController.text.toString(),
+                   );
+                   try{
+                    await auth.signInWithCredential(credential);
+                    Navigator.push(context, MaterialPageRoute(builder: (context)=>HomeScreen()));
 
-              const SizedBox(height: 25,),
-              const Text("Didn't recieve code?",
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: Colors.black
-              ),
-              ),
-              const SizedBox(height: 25,),
-              const Text("Resend Now",
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: Colors.purple
-              ),
-              ),
+                   }catch(e){
+                    setState(() {
+                  loading = false;
+                });
+                Utils().toastMessage(e.toString());
+
+
+                   }
+
+               }
+               ),
+
+              
             ],
-            ),
-            ),
-            ),
-            ),
-            );
+          ),
+        ),
+      ),
+    );
   }
-  
-//verify OTP
-
-void verifyOtp(BuildContext context, String userOtp){
-  final ap = Provider.of<AuthProvider>(context, listen: false);
-  ap.verifyOtp(context: context
-  , verificationId: widget.verificationId
-  , userOtp: userOtp,
-   onSuccess: (){
-    // checking user exist
-    ap.checkExisitingUser().then((value) async{
-      if( value == true){
-        //again brain logic
-
-      }else{
-        //new user(brain logic)
-        Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context)=> const  UserInformationScreen()), (route) => false);
-      }
-
-    });
-   }
-   );
-
 }
-}
-
- 
-
-

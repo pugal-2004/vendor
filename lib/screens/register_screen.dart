@@ -1,8 +1,8 @@
-import 'package:country_picker/country_picker.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:koyambedu/provider/auth_provider.dart';
-import 'package:koyambedu/widgets/custom_button.dart';
-import 'package:provider/provider.dart';
+import 'package:koyambedu/components/round_button.dart';
+import 'package:koyambedu/components/utils.dart';
+import 'package:koyambedu/screens/otp_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -13,143 +13,82 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
 
-  final TextEditingController PhoneController = TextEditingController();
-
-  Country selectedCountry = Country(
-    phoneCode: "91", 
-    countryCode: "IN", 
-    e164Sc: 0,
-     geographic: true,
-      level: 1,
-       name: "India", 
-       example: "India",
-        displayName: "India",
-         displayNameNoCountryCode: "IN",
-          e164Key: "",
-          );
-
-
+bool loading = false;
+final auth =FirebaseAuth.instance;
+final PhoneNumberController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
-
-    PhoneController.selection = TextSelection.fromPosition(
-      TextPosition(offset: PhoneController.text.length,
-      ),
-    );
-
-    return SingleChildScrollView(
-      child: Scaffold(
-        body: SafeArea(child: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 25, horizontal: 35),
-            child: Column(
-              children: [
-               const  Icon(Icons.image_search,
-                size: 200,
-                ),
-                const SizedBox(height: 10,),
-                const Text("Register",
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                ),
-                const Text("Add your to Number for OTP",
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 20,),
-                TextFormField(
-                  cursorColor: Colors.purple,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold
+    return Scaffold(
+      body: SafeArea(
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: TextFormField(
+                  controller: PhoneNumberController,
+                  decoration: const InputDecoration(
+                    hintText: "+91"
                   ),
-                  controller: PhoneController,
-                  onChanged: (value){
-                    setState((){
-                      PhoneController.text = value;
-      
-                    });
-                  },
-                  decoration: InputDecoration(
-                    hintText: "Enter the phone number",
-                    helperStyle: const TextStyle(fontWeight: FontWeight.w400),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(color: Colors.black),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide( color: Colors.black)
-                    ),
-                    prefixIcon: Container(
-                      padding: const EdgeInsets.all(8.0),
-                      child: InkWell(
-                        onTap: (){
-                          showCountryPicker(context: context,
-                          countryListTheme: const  CountryListThemeData(
-                            bottomSheetHeight: 500,
-                          ), 
-                          onSelect: (value){
-                            setState(() {
-                              selectedCountry = value;
-                            });
-      
-                          } );
-                        },
-                        child: Text(
-                          "${selectedCountry.flagEmoji} + ${selectedCountry.phoneCode}",
-                          style: const TextStyle(
-                            fontSize: 18,
-                            color: Colors.black,
-                            fontWeight: FontWeight.bold
-                          ),
-                        ),
-                      ),
-                    ),
-                    suffix: PhoneController.text.length>9 ? 
-                    Container(
-                      height: 30,
-                      width: 30,
-                     
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle, color: Colors.green
-                      ),
-                      child: const  Icon(Icons.done,
-                      color: Colors.white,
-                      size: 20,
-      
-                      ),
-      
-      
-                    )
-                    : null,
-                  ),
+                  keyboardType: TextInputType.number,
                 ),
-                const SizedBox(height: 20,),
-                
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: CustomButton(
-                    text: "Login", 
-                  onPressed: ()=> sendPhoneNumber()
-                  ),
-                )
-      
+              ),
+              const  SizedBox(height: 40,),
+              RoundButton(title: "Login",loading: loading,
               
-              ],
-            ),
-            ),
-        ),
+              
+              
+               onTap:(){
+
+                setState(() {
+                  loading = true;
+                });
+
+
+                
+
+                auth.verifyPhoneNumber(
+                    phoneNumber: PhoneNumberController.text,
+                    verificationCompleted: (_){
+                      setState(() {
+                        loading = false;
+                      });
+
+                    },
+                     verificationFailed: (e)
+                     {
+                       setState(() {
+                        loading = false;
+                      });
+                      Utils().toastMessage(e.toString());
+
+                     }, 
+                     codeSent: (String verificationId , int?  toeken){
+                      Navigator.push(context, MaterialPageRoute(builder: (context)=>  OtpSCreen(verificationId: verificationId,)));
+                    
+                     setState(() {
+                        loading = false;
+                      });
+                     },
+                      codeAutoRetrievalTimeout: (e){
+                        Utils().toastMessage(e.toString());
+
+                         setState(() {
+                        loading = false;
+                      });
+                      }
+                      );
+               }
+               ),
+
+              
+            ],
+          ),
         ),
       ),
+      
     );
-  }
-
-  void sendPhoneNumber(){
-    //123456
-
-    final ap = Provider.of<AuthProvider>(context, listen: false);
-    String phoneNumber = PhoneController.text.trim();
-    ap.signInWithPhone(context, "+${selectedCountry.phoneCode}$phoneNumber");
   }
 }
