@@ -1,8 +1,8 @@
 
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:flutter/material.dart';
-import 'package:koyambedu/features/homepage.dart';
 import 'package:koyambedu/pages/cart.dart';
+import 'package:koyambedu/pages/homepage.dart';
 import 'package:koyambedu/pages/info.dart';
 import 'package:koyambedu/pages/person.dart';
 

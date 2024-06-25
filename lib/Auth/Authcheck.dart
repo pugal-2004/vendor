@@ -1,6 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:koyambedu/features/homepage.dart';
+import 'package:koyambedu/pages/homepage.dart';
 import 'package:koyambedu/screens/welcome_screen.dart';
 
 
